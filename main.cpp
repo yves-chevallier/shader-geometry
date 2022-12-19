@@ -5,33 +5,44 @@
 #include <GL/glew.h>
 #include <random>
 
+#define WIDTH 800
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(800, 800), "Test");
+    sf::RenderWindow window(sf::VideoMode(WIDTH, WIDTH), "Test");
 
     sf::Shader shader;
     shader.loadFromFile("shader.vert", "shader.geom", "shader.frag");
     sf::Transform matrix = sf::Transform::Identity;
-    matrix.scale(1 / 800.f, 1 / 800.f);
-    //matrix.translate(100, -0.5);
+    matrix.scale(1.0 / WIDTH, 1.0 / WIDTH);
     sf::Glsl::Mat4 projectionViewMatrix = matrix;
 
     shader.setUniform("projectionViewMatrix", projectionViewMatrix);
 
-    shader.setUniform("boid_colour", sf::Glsl::Vec4(0.9, 0.7, 0.25, 1));
+    size_t points = 2;
+    std::vector<GLfloat> vertices;
+    // for (int i = 0; i < points; i++)
+    // {
+    //     vertices[3*i] = (float)(rand() % WIDTH);
+    //     vertices[3*i+1] = (float)(rand() % WIDTH);
+    //     vertices[3*i+2] = (float)(rand() / (float)RAND_MAX) * 2. * 3.14;
+    // }
 
-    size_t points = 1;
-    std::vector<GLfloat> vertices(3*points);
-    for (int i = 0; i < points; i++)
-    {
-        vertices[3*i] = (float)(rand() % 800);
-        vertices[3*i+1] = (float)(rand() % 800);
-        vertices[3*i+2] = (float)(rand() / (float)RAND_MAX) * 2. * 3.14;
-    }
+    // for (int i = 0; i < 5; i++) {
+    //     for (int j = 0; j < 5; j++) {
+    //         vertices.push_back(-500 + i * 100);
+    //         vertices.push_back(-500 + j * 100);
+    //         vertices.push_back(0);
+    //     }
+    // }
 
-    vertices[3*0] = 0;
-    vertices[3*0+1] = 0;
-    vertices[3*0+2] = (float)(rand() / (float)RAND_MAX) * 2. * 3.14;
+    vertices.push_back(400.0);
+    vertices.push_back(400.0);
+    vertices.push_back(0.0);
+
+    vertices.push_back(-200.0);
+    vertices.push_back(-200.0);
+    vertices.push_back(1.0);
+
     while (window.isOpen())
     {
         sf::Event currEvent;
@@ -49,9 +60,9 @@ int main()
 
         window.clear(sf::Color::Black);
 
-        glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, vertices.data());
-        glDrawArrays(GL_POINTS, 0, vertices.size());
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glDrawArrays(GL_POINTS, 0, vertices.size() / 3);
         glDisableClientState(GL_VERTEX_ARRAY);
 
         sf::Shader::bind(&shader);
