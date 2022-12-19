@@ -6,8 +6,7 @@
 #include <random>
 
 #define WIDTH 800
-int main()
-{
+int main() {
     sf::RenderWindow window(sf::VideoMode(WIDTH, WIDTH), "Test");
 
     sf::Shader shader;
@@ -18,48 +17,36 @@ int main()
 
     shader.setUniform("projectionViewMatrix", projectionViewMatrix);
 
-    size_t points = 2;
     std::vector<GLfloat> vertices;
-    // for (int i = 0; i < points; i++)
-    // {
-    //     vertices[3*i] = (float)(rand() % WIDTH);
-    //     vertices[3*i+1] = (float)(rand() % WIDTH);
-    //     vertices[3*i+2] = (float)(rand() / (float)RAND_MAX) * 2. * 3.14;
-    // }
 
-    // for (int i = 0; i < 5; i++) {
-    //     for (int j = 0; j < 5; j++) {
-    //         vertices.push_back(-500 + i * 100);
-    //         vertices.push_back(-500 + j * 100);
-    //         vertices.push_back(0);
-    //     }
-    // }
+    int rows=10, cols=10;
+    float offset = (float)WIDTH/rows;
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            vertices.push_back(-WIDTH + offset + (float)WIDTH * 2.0 / rows * i);
+            vertices.push_back(-WIDTH + offset + (float)WIDTH * 2.0 / cols * j);
+            vertices.push_back((float)i * j / (cols * rows));
+        }
+    }
+    //  vertices.push_back(400.0); vertices.push_back(400.0); vertices.push_back(0.0);
+    //  vertices.push_back(400.0); vertices.push_back(-400.0); vertices.push_back(0.25);
+    //  vertices.push_back(-400.0); vertices.push_back(-400.0); vertices.push_back(0.5);
+    //  vertices.push_back(-400.0); vertices.push_back(400.0); vertices.push_back(0.75);
+    // vertices.push_back(-200.0); vertices.push_back(-200.0); vertices.push_back(0.25);
+    // vertices.push_back(0.0); vertices.push_back(0.0); vertices.push_back(0.35);
 
-    vertices.push_back(400.0);
-    vertices.push_back(400.0);
-    vertices.push_back(0.0);
-
-    vertices.push_back(-200.0);
-    vertices.push_back(-200.0);
-    vertices.push_back(1.0);
-
-    while (window.isOpen())
-    {
+    while (window.isOpen()) {
         sf::Event currEvent;
-        while (window.pollEvent(currEvent))
-        {
-            switch (currEvent.type)
-            {
+        while (window.pollEvent(currEvent)) {
+            switch (currEvent.type) {
             case(sf::Event::Closed):
-                window.close();
-                break;
-            default:
-                break;
+                window.close(); break;
             }
         }
 
         window.clear(sf::Color::Black);
-
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         glVertexPointer(3, GL_FLOAT, 0, vertices.data());
         glEnableClientState(GL_VERTEX_ARRAY);
         glDrawArrays(GL_POINTS, 0, vertices.size() / 3);
