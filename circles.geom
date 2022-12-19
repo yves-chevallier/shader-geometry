@@ -51,11 +51,11 @@ void triangle(float angle, float radius) {
 }
 
 void main(void) {
-    // vec3 colour = vec3(85.0/255.0, 140.0/255.0, 244.0/255.0);
-    // finalColour = vec4(colour, 1.0);
-	// centerPosition = gl_in[0].gl_Position;
-	// radius = 0.5;
-	// square(radius, 0.0);
-	finalColour = vec4(85.0/255.0, 140.0/255.0, 244.0/255.0, 0.0);
-	triangle(angle[0], 0.005);
+    vec3 colour = vec3(42.0/255.0, 120.0/255.0, 200.0/255.0);
+    finalColour = vec4(colour, 1.0);
+	centerPosition = gl_in[0].gl_Position;
+	radius = 0.2;
+	square(radius, 0.0);
+	// finalColour = vec4(85.0/255.0, 140.0/255.0, 244.0/255.0, 0.0);
+	// triangle(angle[0], 0.01);
 }

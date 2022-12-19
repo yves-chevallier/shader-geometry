@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sstream>
 #include <cmath>
+#include <array>
 
 #define FRAMERATE 120
 
@@ -48,19 +49,31 @@ struct Particle {
     }
 };
 
-#define WIDTH 800
+#define PARTICLES 20000
+array<GLfloat, 3*PARTICLES> vertices;
+array<Particle, PARTICLES> particles;
+
+#define WIDTH 1200
 int main() {
     sf::RenderWindow window(sf::VideoMode(WIDTH, WIDTH), "Test");
 
     sf::Shader shader;
     shader.loadFromFile("shader.vert", "shader.geom", "shader.frag");
+    sf::Shader circleShader;
+    circleShader.loadFromFile("shader.vert", "circles.geom", "circles.frag");
+
+    sf::Shader shader2;
+    shader2.loadFromFile("shader.frag", sf::Shader::Fragment);
+
     sf::Transform matrix = sf::Transform::Identity;
     matrix.scale(2.0 / WIDTH, 2.0 / WIDTH);
     sf::Glsl::Mat4 projectionViewMatrix = matrix;
 
     shader.setUniform("projectionViewMatrix", projectionViewMatrix);
+    circleShader.setUniform("projectionViewMatrix", projectionViewMatrix);
+    shader.setUniform("screenWidth", (float)WIDTH);
+    circleShader.setUniform("screenWidth", (float)WIDTH);
 
-    std::vector<float> vertices;
 
     // int rows=5, cols=5;
     // float offset = (float)WIDTH/rows;
@@ -100,7 +113,7 @@ int main() {
     fps.setCharacterSize(16);
     fps.setFillColor(sf::Color::White);
 
-    vector<Particle> particles(30000);
+
     for (int i = 0; i < particles.size(); i++) {
         particles[i].position = sf::Vector2f((rand() % WIDTH) - WIDTH/2, (rand() % WIDTH) - WIDTH/2);
         particles[i].velocity = sf::Vector2f(rand() % 200 - 50, rand() % 200 - 50);
@@ -111,10 +124,17 @@ int main() {
     //     vertices.push_back((float)(rand() % WIDTH - WIDTH / 2));
     //     vertices.push_back((float)(rand() % INT_MAX) * 2 * 3.14);
     // }
+    int i = 0;
+    for (auto &p : particles) {
+        vertices[i++] = p.position.x;
+        vertices[i++] = p.position.y;
+        vertices[i++] = atan2(p.velocity.y, p.velocity.x);
+    }
 
 
-
-
+glEnableClientState(GL_VERTEX_ARRAY);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     while (window.isOpen()) {
         sf::Event currEvent;
         while (window.pollEvent(currEvent)) {
@@ -127,18 +147,20 @@ int main() {
         timeSinceLastDraw = clock.restart();
         timeSinceLastUpdate += timeSinceLastDraw;
         double timeFps = 1.f / timeSinceLastDraw.asSeconds();
-        //fps.setString("FPS: " + to_string_with_precision(timeFps, 0));
+        fps.setString("FPS: " + to_string_with_precision(timeFps, 0));
 
 
         while (timeSinceLastUpdate > timePerFrame) {
             timeSinceLastUpdate -= timePerFrame;
-            vertices.clear();
+
+            auto dt = timePerFrame.asSeconds();
+            int i = 0;
             for (auto &p : particles) {
-                p.update(timePerFrame.asSeconds());
+                p.update(dt);
                 p.bounce(sf::Vector2f(WIDTH/2.0, WIDTH/2.0));
-                vertices.push_back(p.position.x);
-                vertices.push_back(p.position.y);
-                vertices.push_back(atan2(p.velocity.y, p.velocity.x));
+                vertices[i++] = p.position.x;
+                vertices[i++] = p.position.y;
+                vertices[i++] = atan2(p.velocity.y, p.velocity.x);
             }
             if (seconds.getElapsedTime() > sf::seconds(1)) {
                 seconds.restart();
@@ -147,16 +169,24 @@ int main() {
         }
 
 
-
         window.clear(sf::Color(40,44,52));
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+
+
+
+        sf::Shader::bind(&circleShader);
+
         glVertexPointer(3, GL_FLOAT, 0, vertices.data());
-        glEnableClientState(GL_VERTEX_ARRAY);
         glDrawArrays(GL_POINTS, 0, vertices.size() / 3);
+
+
         sf::Shader::bind(&shader);
-        glDisableClientState(GL_VERTEX_ARRAY);
-        // window.draw(fps);
+        glVertexPointer(3, GL_FLOAT, 0, vertices.data());
+        glDrawArrays(GL_POINTS, 0, vertices.size() / 3);
+
+
+        //
+        sf::Shader::bind(nullptr);
+        window.draw(fps);
 
         window.display();
     }
