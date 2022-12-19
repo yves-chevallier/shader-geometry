@@ -19,21 +19,7 @@ int main() {
 
     std::vector<GLfloat> vertices;
 
-    int rows=10, cols=10;
-    float offset = (float)WIDTH/rows;
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            vertices.push_back(-WIDTH + offset + (float)WIDTH * 2.0 / rows * i);
-            vertices.push_back(-WIDTH + offset + (float)WIDTH * 2.0 / cols * j);
-            vertices.push_back((float)i * j / (cols * rows));
-        }
-    }
-    //  vertices.push_back(400.0); vertices.push_back(400.0); vertices.push_back(0.0);
-    //  vertices.push_back(400.0); vertices.push_back(-400.0); vertices.push_back(0.25);
-    //  vertices.push_back(-400.0); vertices.push_back(-400.0); vertices.push_back(0.5);
-    //  vertices.push_back(-400.0); vertices.push_back(400.0); vertices.push_back(0.75);
-    // vertices.push_back(-200.0); vertices.push_back(-200.0); vertices.push_back(0.25);
-    // vertices.push_back(0.0); vertices.push_back(0.0); vertices.push_back(0.35);
+    vertices.push_back(0.0); vertices.push_back(0.0); vertices.push_back(0.0);
 
     while (window.isOpen()) {
         sf::Event currEvent;
