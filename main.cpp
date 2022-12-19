@@ -9,7 +9,7 @@
 #include <cmath>
 #include <array>
 
-#define FRAMERATE 120
+#define FRAMERATE 80
 
 using namespace std;
 
@@ -61,9 +61,6 @@ int main() {
     shader.loadFromFile("shader.vert", "shader.geom", "shader.frag");
     sf::Shader circleShader;
     circleShader.loadFromFile("shader.vert", "circles.geom", "circles.frag");
-
-    sf::Shader shader2;
-    shader2.loadFromFile("shader.frag", sf::Shader::Fragment);
 
     sf::Transform matrix = sf::Transform::Identity;
     matrix.scale(2.0 / WIDTH, 2.0 / WIDTH);
@@ -168,23 +165,15 @@ glEnableClientState(GL_VERTEX_ARRAY);
             }
         }
 
-
         window.clear(sf::Color(40,44,52));
-
-
+        glVertexPointer(3, GL_FLOAT, 0, vertices.data());
 
         sf::Shader::bind(&circleShader);
-
-        glVertexPointer(3, GL_FLOAT, 0, vertices.data());
         glDrawArrays(GL_POINTS, 0, vertices.size() / 3);
-
 
         sf::Shader::bind(&shader);
-        glVertexPointer(3, GL_FLOAT, 0, vertices.data());
         glDrawArrays(GL_POINTS, 0, vertices.size() / 3);
 
-
-        //
         sf::Shader::bind(nullptr);
         window.draw(fps);
 
