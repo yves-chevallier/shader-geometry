@@ -1,6 +1,12 @@
 {
     "files.associations": {
         "vector": "cpp",
-        "array": "cpp"
-    }
+        "array": "cpp",
+        "random": "cpp",
+        "cmath": "cpp",
+        "ostream": "cpp"
+    },
+    "cSpell.words": [
+        "boids"
+    ]
 }

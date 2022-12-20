@@ -1,4 +1,4 @@
-//main.cpp
+// main.cpp
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include <vector>
@@ -9,99 +9,161 @@
 #include <cmath>
 #include <array>
 
-#define FRAMERATE 80
+#define FRAMERATE 120
 
 using namespace std;
 
+constexpr double M_PI = 3.141592653589793;
+constexpr double M_PI_2 = 1.5707963267948966;
+constexpr double M_PI_4 = 0.7853981633974483;
+double FastArcTan(double x)
+{
+    return M_PI_4 * x - x * (fabs(x) - 1) * (0.2447 + 0.0663 * fabs(x));
+}
+double FastArcTan2(double y, double x)
+{
+    if (x >= 0)
+    { // -pi/2 .. pi/2
+        if (y >= 0)
+        { // 0 .. pi/2
+            if (y < x)
+            { // 0 .. pi/4
+                return FastArcTan(y / x);
+            }
+            else
+            { // pi/4 .. pi/2
+                return M_PI_2 - FastArcTan(x / y);
+            }
+        }
+        else
+        {
+            if (-y < x)
+            { // -pi/4 .. 0
+                return FastArcTan(y / x);
+            }
+            else
+            { // -pi/2 .. -pi/4
+                return -M_PI_2 - FastArcTan(x / y);
+            }
+        }
+    }
+    else
+    { // -pi..-pi/2, pi/2..pi
+        if (y >= 0)
+        { // pi/2 .. pi
+            if (y < -x)
+            { // pi*3/4 .. pi
+                return FastArcTan(y / x) + M_PI;
+            }
+            else
+            { // pi/2 .. pi*3/4
+                return M_PI_2 - FastArcTan(x / y);
+            }
+        }
+        else
+        { // -pi .. -pi/2
+            if (-y < -x)
+            { // -pi .. -pi*3/4
+                return FastArcTan(y / x) - M_PI;
+            }
+            else
+            { // -pi*3/4 .. -pi/2
+                return -M_PI_2 - FastArcTan(x / y);
+            }
+        }
+    }
+}
+
 template <typename T>
-std::string to_string_with_precision(const T a_value, const int n = 6) {
+std::string to_string_with_precision(const T a_value, const int n = 6)
+{
     std::ostringstream out;
     out.precision(n);
     out << std::fixed << a_value;
     return out.str();
 }
 
-struct Particle {
+struct Particle
+{
     sf::Vector2f position;
     sf::Vector2f velocity;
 
-    void update(float dt) {
+    void update(float dt)
+    {
         position += velocity * dt;
     }
 
-    void bounce(sf::Vector2f size) {
-        if (position.x < -size.x) {
+    void bounce(sf::Vector2f size)
+    {
+        if (position.x < -size.x)
+        {
             position.x = -size.x;
             velocity.x *= -1;
         }
-        if (position.x > size.x) {
+        if (position.x > size.x)
+        {
             position.x = size.x;
             velocity.x *= -1;
         }
-        if (position.y < -size.y) {
+        if (position.y < -size.y)
+        {
             position.y = -size.y;
             velocity.y *= -1;
         }
-        if (position.y > size.y) {
+        if (position.y > size.y)
+        {
             position.y = size.y;
             velocity.y *= -1;
         }
     }
 };
 
-#define PARTICLES 20000
-array<GLfloat, 3*PARTICLES> vertices;
-array<Particle, PARTICLES> particles;
+#define MAX_PARTICLES 1000000
+array<GLfloat[3], MAX_PARTICLES> vertices;
+array<Particle, MAX_PARTICLES> particles;
 
 #define WIDTH 1200
-int main() {
+int main()
+{
+    size_t nParticles = 100;
+    float radius = 0.2f;
     sf::RenderWindow window(sf::VideoMode(WIDTH, WIDTH), "Test");
-
-    sf::Shader shader;
-    shader.loadFromFile("shader.vert", "shader.geom", "shader.frag");
-    sf::Shader circleShader;
-    circleShader.loadFromFile("shader.vert", "circles.geom", "circles.frag");
 
     sf::Transform matrix = sf::Transform::Identity;
     matrix.scale(2.0 / WIDTH, 2.0 / WIDTH);
     sf::Glsl::Mat4 projectionViewMatrix = matrix;
 
-    shader.setUniform("projectionViewMatrix", projectionViewMatrix);
-    circleShader.setUniform("projectionViewMatrix", projectionViewMatrix);
-    shader.setUniform("screenWidth", (float)WIDTH);
-    circleShader.setUniform("screenWidth", (float)WIDTH);
+    sf::Shader shader;
+    sf::Shader circleShader;
+    sf::Shader fastShader;
 
+    shader.loadFromFile("assets/boid.vert", "assets/boid.geom", "assets/boid.frag");
+    circleShader.loadFromFile("assets/circles.vert", "assets/circles.geom", "assets/circles.frag");
+    fastShader.loadFromFile("assets/fast.vert", "assets/fast.frag");
 
-    // int rows=5, cols=5;
-    // float offset = (float)WIDTH/rows;
-    // for (int i = 0; i < rows; i++) {
-    //     for (int j = 0; j < cols; j++) {
-    //         vertices.push_back(-WIDTH + offset + (float)WIDTH * 2.0 / rows * i);
-    //         vertices.push_back(-WIDTH + offset + (float)WIDTH * 2.0 / cols * j);
-    //         vertices.push_back((float)i * j / (cols * rows));
-    //     }
-    // }
-    // vertices.push_back(400.0); vertices.push_back(400.0); vertices.push_back(0.0);
-    // vertices.push_back(400.0); vertices.push_back(-400.0); vertices.push_back(0.25);
-    // vertices.push_back(-400.0); vertices.push_back(-400.0); vertices.push_back(0.5);
-    // vertices.push_back(-400.0); vertices.push_back(400.0); vertices.push_back(0.75);
-    // vertices.push_back(0.0); vertices.push_back(0.0); vertices.push_back(0.75);
-    // vertices.push_back(400.0); vertices.push_back(0.0); vertices.push_back(0.75);
-    // vertices.push_back(-400.0); vertices.push_back(-400.0); vertices.push_back(0.75);
-
+    sf::Shader *shaders[] = {&shader, &circleShader, &fastShader};
+    for (auto *s : shaders)
+    {
+        s->setUniform("boidColor", sf::Glsl::Vec3(85.f / 255, 140.f / 255, 244.f / 255));
+        s->setUniform("radiusColor", sf::Glsl::Vec3(42.f / 255, 120.f / 255, 200.f / 255));
+        s->setUniform("boidSize", 0.01f);
+        s->setUniform("projectionViewMatrix", projectionViewMatrix);
+        s->setUniform("screenWidth", (float)WIDTH);
+    }
 
     // Time management
     sf::Clock clock;
     sf::Clock seconds;
     sf::Time secondsCount = sf::Time::Zero;
     sf::Time timeSinceLastUpdate = sf::Time::Zero;
-    sf::Time timePerFrame = sf::seconds(1.f / FRAMERATE);
+    sf::Time timePerFrame = sf::seconds(1.f / 60);
     sf::Time timeSinceLastDraw = sf::Time::Zero;
     window.setFramerateLimit(FRAMERATE);
 
-   // Fps text
+    // Fps text
     sf::Font font;
-    if (!font.loadFromFile("assets/collegiate.ttf")) {
+    if (!font.loadFromFile("assets/collegiate.ttf"))
+    {
         std::cout << "Error loading font" << std::endl;
     }
     sf::Text fps;
@@ -110,69 +172,163 @@ int main() {
     fps.setCharacterSize(16);
     fps.setFillColor(sf::Color::White);
 
-
-    for (int i = 0; i < particles.size(); i++) {
-        particles[i].position = sf::Vector2f((rand() % WIDTH) - WIDTH/2, (rand() % WIDTH) - WIDTH/2);
-        particles[i].velocity = sf::Vector2f(rand() % 200 - 50, rand() % 200 - 50);
-        //std::cout << particles[i].position.x << " " << particles[i].position.y << std::endl;
-    }
-    // for (int i = 0; i < 100; i++) {
-    //     vertices.push_back((float)(rand() % WIDTH - WIDTH / 2));
-    //     vertices.push_back((float)(rand() % WIDTH - WIDTH / 2));
-    //     vertices.push_back((float)(rand() % INT_MAX) * 2 * 3.14);
-    // }
-    int i = 0;
-    for (auto &p : particles) {
-        vertices[i++] = p.position.x;
-        vertices[i++] = p.position.y;
-        vertices[i++] = atan2(p.velocity.y, p.velocity.x);
+    for (int i = 0; i < nParticles; i++)
+    {
+        particles[i].position = sf::Vector2f(rand() % WIDTH - WIDTH / 2, rand() % WIDTH - WIDTH / 2);
+        particles[i].velocity = sf::Vector2f(rand() % 500 - 250, rand() % 500 - 250);
     }
 
+    for (int i = 0; i < nParticles; i++)
+    {
+        auto &p = particles[i];
+        vertices[i][0] = p.position.x;
+        vertices[i][1] = p.position.y;
+        vertices[i][2] = atan2(p.velocity.y, p.velocity.x);
+    }
 
-glEnableClientState(GL_VERTEX_ARRAY);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    while (window.isOpen()) {
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    float fpsAvg = 0;
+    float fpsCount = 0;
+    float avg = 0;
+    bool showCircles = false;
+    sf::Shader *boidShader = &shader;
+    while (window.isOpen())
+    {
         sf::Event currEvent;
-        while (window.pollEvent(currEvent)) {
-            switch (currEvent.type) {
-            case(sf::Event::Closed):
-                window.close(); break;
+        while (window.pollEvent(currEvent))
+        {
+            switch (currEvent.type)
+            {
+            case (sf::Event::Closed):
+                window.close();
+                break;
+            case (sf::Event::MouseWheelScrolled):
+                if (currEvent.mouseWheelScroll.delta > 0)
+                {
+                    radius += 0.01f;
+                    showCircles = true;
+                }
+                else
+                {
+                    if (radius < 0.01f) {
+                        radius = 0.01f;
+                        showCircles = false;
+                    }
+                    else
+                        radius -= 0.01f;
+                }
+                break;
+
+            case (sf::Event::KeyPressed):
+            {
+                float increment = nParticles / 10;
+                if (currEvent.key.code == sf::Keyboard::Add)
+                {
+
+                    nParticles += increment;
+                    if (nParticles > MAX_PARTICLES)
+                    {
+                        nParticles = MAX_PARTICLES;
+                    }
+                    for (int i = nParticles - increment; i < nParticles; i++)
+                    {
+                        particles[i].position = sf::Vector2f(rand() % WIDTH - WIDTH / 2, rand() % WIDTH - WIDTH / 2);
+                        particles[i].velocity = sf::Vector2f(rand() % 500 - 250, rand() % 500 - 250);
+                    }
+                }
+                else if (currEvent.key.code == sf::Keyboard::Subtract)
+                {
+                    nParticles -= increment;
+                    if (nParticles < 10)
+                    {
+                        nParticles = 10;
+                    }
+                }
+                else if (currEvent.key.code == sf::Keyboard::Space)
+                {
+                    showCircles = !showCircles;
+                }
+                else if (currEvent.key.code == sf::Keyboard::F)
+                {
+                    if (boidShader == &shader)
+                    {
+                        boidShader = &fastShader;
+                    }
+                    else
+                    {
+                        boidShader = &shader;
+                    }
+                }
+                else if (currEvent.key.code == sf::Keyboard::Escape)
+                {
+                    window.close();
+                }
+                break;
+            }
             }
         }
-
+        circleShader.setUniform("radius", radius);
         timeSinceLastDraw = clock.restart();
         timeSinceLastUpdate += timeSinceLastDraw;
         double timeFps = 1.f / timeSinceLastDraw.asSeconds();
-        fps.setString("FPS: " + to_string_with_precision(timeFps, 0));
 
 
-        while (timeSinceLastUpdate > timePerFrame) {
+        while (timeSinceLastUpdate > timePerFrame)
+        {
             timeSinceLastUpdate -= timePerFrame;
 
             auto dt = timePerFrame.asSeconds();
-            int i = 0;
-            for (auto &p : particles) {
-                p.update(dt);
-                p.bounce(sf::Vector2f(WIDTH/2.0, WIDTH/2.0));
-                vertices[i++] = p.position.x;
-                vertices[i++] = p.position.y;
-                vertices[i++] = atan2(p.velocity.y, p.velocity.x);
+
+            for (auto *s : shaders)
+            {
+                if (nParticles < 1000)
+                    s->setUniform("boidSize", 0.02f);
+                else if (nParticles < 10000)
+                    s->setUniform("boidSize", 0.01f);
+                else if (nParticles < 100000)
+                    s->setUniform("boidSize", 0.005f);
+                else if (nParticles >= 100000)
+                    s->setUniform("boidSize", 0.003f);
+                else
+                    s->setUniform("boidSize", 0.03f);
             }
-            if (seconds.getElapsedTime() > sf::seconds(1)) {
+
+            for (int i = 0; i < nParticles; i++)
+            {
+                auto &p = particles[i];
+                p.update(dt);
+                p.bounce(sf::Vector2f(WIDTH / 2.0, WIDTH / 2.0));
+                vertices[i][0] = p.position.x;
+                vertices[i][1] = p.position.y;
+                if (boidShader == &fastShader)
+                    vertices[i][2] = 0;
+                else
+                    vertices[i][2] = FastArcTan2(p.velocity.y, p.velocity.x);
+            }
+            fpsCount++;
+            fpsAvg += timeFps;
+            if (seconds.getElapsedTime() >= sf::seconds(1))
+            {
+                avg = fpsAvg / fpsCount;
+                fpsAvg = 0; fpsCount = 0;
                 seconds.restart();
-                std::cout << "FPS: " + to_string_with_precision(timeFps, 0) << std::endl;
             }
         }
+        fps.setString("boids: " + to_string(nParticles) + " fps: " + to_string_with_precision(avg, 0));
 
-        window.clear(sf::Color(40,44,52));
+        window.clear(sf::Color(40, 44, 52));
         glVertexPointer(3, GL_FLOAT, 0, vertices.data());
 
-        sf::Shader::bind(&circleShader);
-        glDrawArrays(GL_POINTS, 0, vertices.size() / 3);
+        if (timeFps > 30 && showCircles)
+        {
+          sf::Shader::bind(&circleShader);
+          glDrawArrays(GL_POINTS, 0, nParticles / 3);
+        }
 
-        sf::Shader::bind(&shader);
-        glDrawArrays(GL_POINTS, 0, vertices.size() / 3);
+        sf::Shader::bind(boidShader);
+        glDrawArrays(GL_POINTS, 0, nParticles / 3);
 
         sf::Shader::bind(nullptr);
         window.draw(fps);
