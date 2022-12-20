@@ -87,22 +87,30 @@ array<Particle, MAX_PARTICLES> particles;
 int main()
 {
     size_t nParticles = 100;
-    float radius = 0.2f;
+    float radius = 0.1f;
     sf::RenderWindow window(sf::VideoMode(WIDTH, WIDTH), "Test");
 
     sf::Transform matrix = sf::Transform::Identity;
     matrix.scale(2.0 / WIDTH, 2.0 / WIDTH);
     sf::Glsl::Mat4 projectionViewMatrix = matrix;
 
+    sf::Texture texture;
+    texture.create(WIDTH, WIDTH);
+    sf::Sprite sprite(texture);
+
+    sf::RenderTexture renderTexture;
+    renderTexture.create(WIDTH, WIDTH);
+
     sf::Shader shader;
     sf::Shader circleShader;
     sf::Shader fastShader;
+    sf::Shader textureShader;
 
     shader.loadFromFile("assets/boid.vert", "assets/boid.geom", "assets/boid.frag");
     circleShader.loadFromFile("assets/circles.vert", "assets/circles.geom", "assets/circles.frag");
     fastShader.loadFromFile("assets/fast.vert", "assets/fast.frag");
-
-    sf::Shader *shaders[] = {&shader, &circleShader, &fastShader};
+    textureShader.loadFromFile("assets/fast.vert", "assets/texture.frag");
+    sf::Shader *shaders[] = {&shader, &circleShader, &fastShader, &textureShader};
     for (auto *s : shaders)
     {
         s->setUniform("boidColor", sf::Glsl::Vec3(85.f / 255, 140.f / 255, 244.f / 255));
@@ -110,6 +118,8 @@ int main()
         s->setUniform("boidSize", 0.01f);
         s->setUniform("projectionViewMatrix", projectionViewMatrix);
         s->setUniform("screenWidth", (float)WIDTH);
+        s->setUniform("iChannel0", texture);
+        s->setUniform("iResolution", sf::Glsl::Vec2(WIDTH, WIDTH));
     }
 
     // Time management
@@ -280,20 +290,25 @@ int main()
         fps.setString("boids: " + to_string(nParticles) + " fps: " + to_string_with_precision(avg, 0));
 
         window.clear(sf::Color(40, 44, 52));
+        window.draw(sprite, &textureShader);
+        sprite.setPosition(window.mapPixelToCoords(sf::Vector2i(0, 0)));
+        sprite.setScale(window.getSize().x / (float)WIDTH, window.getSize().y / (float)WIDTH);
+
         glVertexPointer(3, GL_FLOAT, 0, vertices.data());
 
-        if (timeFps > 30 && showCircles)
-        {
+        // if (timeFps > 30 && showCircles)
+        // {
           sf::Shader::bind(&circleShader);
           glDrawArrays(GL_POINTS, 0, nParticles / 3);
-        }
+        // }
 
-        sf::Shader::bind(boidShader);
-        glDrawArrays(GL_POINTS, 0, nParticles / 3);
+        // sf::Shader::bind(boidShader);
+        // glDrawArrays(GL_POINTS, 0, nParticles / 3);
 
         sf::Shader::bind(nullptr);
         window.draw(fps);
 
         window.display();
+        texture.update(window);
     }
 }
