@@ -14,64 +14,25 @@
 using namespace std;
 
 constexpr double M_PI = 3.141592653589793;
-constexpr double M_PI_2 = 1.5707963267948966;
-constexpr double M_PI_4 = 0.7853981633974483;
+constexpr double M_PI_2 = M_PI / 2;
+constexpr double M_PI_4 = M_PI / 4;
+
 double FastArcTan(double x)
 {
     return M_PI_4 * x - x * (fabs(x) - 1) * (0.2447 + 0.0663 * fabs(x));
 }
 double FastArcTan2(double y, double x)
 {
-    if (x >= 0)
-    { // -pi/2 .. pi/2
-        if (y >= 0)
-        { // 0 .. pi/2
-            if (y < x)
-            { // 0 .. pi/4
-                return FastArcTan(y / x);
-            }
-            else
-            { // pi/4 .. pi/2
-                return M_PI_2 - FastArcTan(x / y);
-            }
-        }
-        else
-        {
-            if (-y < x)
-            { // -pi/4 .. 0
-                return FastArcTan(y / x);
-            }
-            else
-            { // -pi/2 .. -pi/4
-                return -M_PI_2 - FastArcTan(x / y);
-            }
-        }
-    }
-    else
-    { // -pi..-pi/2, pi/2..pi
-        if (y >= 0)
-        { // pi/2 .. pi
-            if (y < -x)
-            { // pi*3/4 .. pi
-                return FastArcTan(y / x) + M_PI;
-            }
-            else
-            { // pi/2 .. pi*3/4
-                return M_PI_2 - FastArcTan(x / y);
-            }
-        }
-        else
-        { // -pi .. -pi/2
-            if (-y < -x)
-            { // -pi .. -pi*3/4
-                return FastArcTan(y / x) - M_PI;
-            }
-            else
-            { // -pi*3/4 .. -pi/2
-                return -M_PI_2 - FastArcTan(x / y);
-            }
-        }
-    }
+    if (x >= 0) // -pi/2 .. pi/2
+        if (y >= 0) // 0 .. pi/4 or pi/4 .. pi/2
+            return y < x ? FastArcTan(y / x) : M_PI_2 - FastArcTan(x / y);
+        else // -pi/4 .. 0 or -pi/2 .. -pi/4
+           return (-y < x) ? FastArcTan(y / x) : -M_PI_2 - FastArcTan(x / y);
+    else // -pi..-pi/2, pi/2..pi
+        if (y >= 0) // pi*3/4 .. pi or pi/2 .. pi*3/4
+            return y < -x ? FastArcTan(y / x) + M_PI : M_PI_2 - FastArcTan(x / y);
+        else // -pi .. -pi*3/4 or -pi*3/4 .. -pi/2
+            return -y < -x ? FastArcTan(y / x) - M_PI : -M_PI_2 - FastArcTan(x / y);
 }
 
 template <typename T>
@@ -122,7 +83,7 @@ struct Particle
 array<GLfloat[3], MAX_PARTICLES> vertices;
 array<Particle, MAX_PARTICLES> particles;
 
-#define WIDTH 1200
+#define WIDTH 1000
 int main()
 {
     size_t nParticles = 100;
@@ -224,7 +185,7 @@ int main()
             case (sf::Event::KeyPressed):
             {
                 float increment = nParticles / 10;
-                if (currEvent.key.code == sf::Keyboard::Add)
+                if (currEvent.key.code == sf::Keyboard::P)
                 {
 
                     nParticles += increment;
@@ -238,7 +199,7 @@ int main()
                         particles[i].velocity = sf::Vector2f(rand() % 500 - 250, rand() % 500 - 250);
                     }
                 }
-                else if (currEvent.key.code == sf::Keyboard::Subtract)
+                else if (currEvent.key.code == sf::Keyboard::M)
                 {
                     nParticles -= increment;
                     if (nParticles < 10)
